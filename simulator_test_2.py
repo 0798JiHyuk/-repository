@@ -61,6 +61,8 @@ class VoicePhishingSimulator:
     def generate_voice(self, text):
         # 1. 텍스트 청소 (괄호 지우기 + 끝음 처리)
         clean_text = re.sub(r"\([^)]*\)", "", text)
+        # Guard against invalid surrogate characters before TTS
+        clean_text = clean_text.encode("utf-8", errors="replace").decode("utf-8")
 
         # 2. 성별에 따른 Voice ID 및 튜닝값 설정 (우리가 찾은 황금비율!)
         if self.attacker_gender == "male":
@@ -101,17 +103,29 @@ class VoicePhishingSimulator:
     # 🗣️ 대화 로직 (Chat Turn)
     # =========================================================
     def chat_turn(self, user_input):
-        self.messages.append({"role": "user", "content": user_input})
+        safe_user_input = user_input.encode("utf-8", errors="replace").decode("utf-8")
+        self.messages.append({"role": "user", "content": safe_user_input})
 
         try:
+            # Ensure all messages are UTF-8 safe before sending to OpenAI
+            def _safe(s):
+                return str(s).encode("utf-8", errors="replace").decode("utf-8")
+
+            safe_messages = [
+                {"role": m.get("role"), "content": _safe(m.get("content", ""))}
+                for m in self.messages
+            ]
+
             # 1. GPT 응답 생성
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=self.messages,
+                messages=safe_messages,
                 temperature=0.8,
                 max_tokens=400,
             )
             full_reply = response.choices[0].message.content
+            # Guard against invalid surrogate characters in model output
+            full_reply = full_reply.encode("utf-8", errors="replace").decode("utf-8")
             ai_reply = full_reply
             status = "ongoing"
 
@@ -128,17 +142,21 @@ class VoicePhishingSimulator:
                 ai_reply = full_reply.replace("[HANGUP]", "").strip()
                 status = "finished"
 
-            self.messages.append({"role": "assistant", "content": ai_reply})
+            safe_ai_reply = ai_reply.encode("utf-8", errors="replace").decode("utf-8")
+            self.messages.append({"role": "assistant", "content": safe_ai_reply})
 
             # 3. 목소리 생성 (여기서 generate_voice 호출!)
-            audio_bytes = self.generate_voice(ai_reply)
+            audio_bytes = self.generate_voice(safe_ai_reply)
 
             # 4. 결과 반환 (3개: 텍스트, 상태, 오디오)
             return ai_reply, status, audio_bytes
 
         except Exception as e:
-            print(f"시스템 오류: {e}")
-            return f"시스템 오류가 발생했습니다: {e}", "error", None
+            import traceback, sys
+            sys.stderr.write("SIMULATOR_TEST_ERROR:\n")
+            sys.stderr.write(traceback.format_exc())
+            sys.stderr.flush()
+            return "AI 응답 생성 중 오류가 발생했습니다.", "error", None
 
     # =========================================================
     # 📜 프롬프트 관리 (검찰 / 대출)

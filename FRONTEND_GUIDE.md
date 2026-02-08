@@ -1,7 +1,7 @@
 # 프론트엔드 연동 가이드 (배포 서버 기준)
 
 **Base URL**
-- `https://cheongeum.onrender.com`
+- `https://hypsometric-katabolically-kelsie.ngrok-free.dev`
 
 **인증 방식**
 - 세션 쿠키 기반 (`cheongeum.sid`)
@@ -117,6 +117,25 @@
 ---
 
 ## 5) 딥페이크 체험
+
+**목소리 딥페이크 생성**
+- **POST** `/api/experience/voice-clone`
+- Content-Type: `multipart/form-data`
+- Form Field:
+  - `voiceFile` (파일)
+  - `phishingText` (텍스트)
+
+**응답**
+```json
+{
+  "success": true,
+  "data": {
+    "audioBase64": "base64...",
+    "mimeType": "audio/mpeg"
+  },
+  "error": null
+}
+```
 
 **녹음 기록 생성**
 - **POST** `/api/experience/records`

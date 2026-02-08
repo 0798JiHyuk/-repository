@@ -173,6 +173,22 @@
 
 ## Experience (딥페이크 체험)
 
+### POST /api/experience/voice-clone
+- 인증 필요
+- Content-Type: `multipart/form-data`
+- Form Field: `voiceFile` (파일), `phishingText` (문자열)
+- Response
+```json
+{
+  "success": true,
+  "data": {
+    "audioBase64": "base64...",
+    "mimeType": "audio/mpeg"
+  },
+  "error": null
+}
+```
+
 ### POST /api/experience/records
 - 인증 필요
 - Request

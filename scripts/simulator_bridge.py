@@ -1,6 +1,13 @@
 import json
 import sys
 import base64
+import os
+import traceback
+
+# Ensure project root is on sys.path so we can import simulator_test_2.py
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 try:
     from simulator_test_2 import VoicePhishingSimulator
@@ -12,7 +19,9 @@ simulators = {}
 
 
 def write_response(obj):
-    sys.stdout.write(json.dumps(obj, ensure_ascii=False) + "\n")
+    # Avoid UnicodeEncodeError on surrogate characters by encoding with replacement.
+    payload = json.dumps(obj, ensure_ascii=False) + "\n"
+    sys.stdout.buffer.write(payload.encode("utf-8", errors="replace"))
     sys.stdout.flush()
 
 
@@ -75,4 +84,7 @@ for line in sys.stdin:
         data["id"] = req_id
         write_response(data)
     except Exception as e:
+        sys.stderr.write("SIMULATOR_BRIDGE_ERROR:\n")
+        sys.stderr.write(traceback.format_exc())
+        sys.stderr.flush()
         write_response({"id": req.get("id") if "req" in locals() else None, "ok": False, "error": str(e)})

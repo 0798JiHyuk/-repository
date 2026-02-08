@@ -101,6 +101,8 @@ trainingLongRoutes.post("/longs/messages", requireAuth, async (req, res) => {
     userProfileJson: body.data.userProfileJson,
   });
 
+  const aiTextSafe = (ai.aiText || "").replace(/[\uD800-\uDFFF]/g, "");
+
   const insertedAi = await pool.query(
     `
     INSERT INTO longform_messages (session_id, turn_no, role, text, input_mode, meta)
@@ -110,7 +112,7 @@ trainingLongRoutes.post("/longs/messages", requireAuth, async (req, res) => {
     [
       sessionId,
       turnNo,
-      ai.aiText,
+      aiTextSafe,
       { aiAudioUrl: ai.aiAudioUrl, aiAudioBase64: ai.aiAudioBase64, status: ai.status },
     ]
   );

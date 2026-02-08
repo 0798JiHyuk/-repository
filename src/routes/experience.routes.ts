@@ -2,8 +2,15 @@ import { Router } from "express";
 import { z } from "zod";
 import { pool } from "../db/pool";
 import { requireAuth } from "../middlewares/requireAuth";
+import multer from "multer";
+import { cloneVoiceAndTts } from "../services/voiceClone.service";
 
 export const experienceRoutes = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024 },
+});
 
 // POST /api/experience/records
 experienceRoutes.post("/records", requireAuth, async (req, res) => {
@@ -37,6 +44,55 @@ experienceRoutes.post("/records", requireAuth, async (req, res) => {
 
   res.status(201).json({ success: true, data: { recordId: rows[0].id }, error: null });
 });
+
+// POST /api/experience/voice-clone
+experienceRoutes.post(
+  "/voice-clone",
+  requireAuth,
+  upload.single("voiceFile"),
+  async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        error: { code: "NO_FILE", message: "voiceFile is required", details: {} },
+      });
+    }
+
+    const phishingText = typeof req.body?.phishingText === "string" ? req.body.phishingText : "";
+    if (!phishingText) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        error: { code: "BAD_REQUEST", message: "phishingText is required", details: {} },
+      });
+    }
+
+    try {
+      const result = await cloneVoiceAndTts({
+        audioBuffer: req.file.buffer,
+        filename: req.file.originalname || "voice.webm",
+        mimeType: req.file.mimetype || "audio/webm",
+        text: phishingText,
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          audioBase64: result.audioBase64,
+          mimeType: "audio/mpeg",
+        },
+        error: null,
+      });
+    } catch (err: any) {
+      return res.status(503).json({
+        success: false,
+        data: null,
+        error: { code: "VOICE_CLONE_FAILED", message: err?.message || "Voice clone failed", details: {} },
+      });
+    }
+  }
+);
 
 // POST /api/experience/clones
 experienceRoutes.post("/clones", requireAuth, async (req, res) => {
