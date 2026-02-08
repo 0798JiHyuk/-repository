@@ -17,6 +17,15 @@
 
 ## 1) 로그인
 
+**POST** `/api/auth/register`
+```json
+{ "email": "a@b.com", "password": "pw1234", "name": "홍길동", "phone": "01012345678" }
+```
+
+---
+
+## 1-1) 로그인
+
 **POST** `/api/auth/login`
 ```json
 { "email": "a@b.com", "password": "pw" }

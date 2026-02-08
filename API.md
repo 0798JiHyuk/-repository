@@ -12,6 +12,16 @@
 
 ## Auth
 
+### POST /api/auth/register
+- Request
+```json
+{ "email": "a@b.com", "password": "pw1234", "name": "홍길동", "phone": "01012345678" }
+```
+- Response
+```json
+{ "success": true, "data": { "userId": 1 }, "error": null }
+```
+
 ### POST /api/auth/login
 - Request
 ```json
