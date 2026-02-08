@@ -51,6 +51,7 @@ trainingLongRoutes.post("/longs/messages", requireAuth, async (req, res) => {
       text: z.string().nullable().optional(),
       userAudioUrl: z.string().url().nullable().optional(),
       meta: z.record(z.any()).optional(),
+      userProfileJson: z.string().optional(),
     })
     .safeParse(req.body);
 
@@ -97,6 +98,7 @@ trainingLongRoutes.post("/longs/messages", requireAuth, async (req, res) => {
     turnNo,
     userText,
     userAudioUrl,
+    userProfileJson: body.data.userProfileJson,
   });
 
   const insertedAi = await pool.query(
@@ -105,7 +107,12 @@ trainingLongRoutes.post("/longs/messages", requireAuth, async (req, res) => {
     VALUES ($1, $2, 'ai', $3, 'text', $4)
     RETURNING id
     `,
-    [sessionId, turnNo, ai.aiText, { aiAudioUrl: ai.aiAudioUrl }]
+    [
+      sessionId,
+      turnNo,
+      ai.aiText,
+      { aiAudioUrl: ai.aiAudioUrl, aiAudioBase64: ai.aiAudioBase64, status: ai.status },
+    ]
   );
 
   for (const f of ai.flags) {
@@ -123,6 +130,8 @@ trainingLongRoutes.post("/longs/messages", requireAuth, async (req, res) => {
     data: {
       aiText: ai.aiText,
       aiAudioUrl: ai.aiAudioUrl,
+      aiAudioBase64: ai.aiAudioBase64,
+      status: ai.status,
       flags: ai.flags,
       messageIds: { user: insertedUser.rows[0].id, ai: insertedAi.rows[0].id },
     },

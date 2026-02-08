@@ -5,6 +5,7 @@ import { trainingLongRoutes } from "./trainingLong.routes";
 import { experienceRoutes } from "./experience.routes";
 import { feedbackRoutes } from "./feedback.routes";
 import { reportsRoutes } from "./reports.routes";
+import { uploadsRoutes } from "./uploads.routes";
 
 export const routes = Router();
 
@@ -14,3 +15,4 @@ routes.use("/training", trainingLongRoutes);
 routes.use("/experience", experienceRoutes);
 routes.use("/feedback", feedbackRoutes);
 routes.use("/reports", reportsRoutes);
+routes.use("/uploads", uploadsRoutes);
